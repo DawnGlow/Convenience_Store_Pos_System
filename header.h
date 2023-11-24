@@ -3,8 +3,8 @@
 
 typedef struct _user {
     int grade; // 0번이면 사장, 1번이면 알바
-    int user_id; // 사용자 id
-    int password; // 사용자 password
+    int user_id; // 사용자 id --> 문자열로 바꾸는게 더 나을 듯???
+    int password; // 사용자 password --> 문자열로 바꾸는게 더 나을 듯???
     int cph; // cost per hour
     int start_time; // 근무 시작 시각
     int end_time; // 근무 종료 시각
@@ -35,3 +35,31 @@ typedef struct _purchase_list {
 typedef struct _saved_item {
     int **item_list; // 저장된 물건 리스트(item id, item count) (동적할당)
 } saved_item;
+
+
+// admin function
+void admin_menu(int item_fd, int purchase_list_fd, user* userdata, int user_rows);
+void item_menu(int item_fd);
+void userdata_menu(user* userdata, int user_rows);
+void analyze_menu(int item_fd, int purchase_list_fd);
+void discount_menu(int item_fd);
+// userDB function
+int initUser(user **userdata,  FILE *user_fp);
+void printUser(user *userdat, int rows);
+void modUser(user *userdata, int rows);
+void saveUser(user *userdata, int rows);
+int addUser(user **userdata, int rows);
+int delUser(user **userdata, int rows);
+
+
+// customer function
+void customer(int item_fd, int saved_item_fd, int purchase_list_fd);
+void buy_item(item * item_list);
+void refund_item(item * item_list, FILE *purchase_list_fp);
+void update_item_DB(item *item_list);
+void search_item();
+void check_purchase_list(FILE *purchase_list_fp);
+void open_refrigerator();
+
+// login function
+user login( FILE *fp);
