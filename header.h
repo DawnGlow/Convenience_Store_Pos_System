@@ -18,7 +18,7 @@ typedef struct _item {
     int dc_percent; // 물건의 할인율
     int event_mode; // 0번 : 일반 , 1번 : 1 + 1, 2번 : 2 + 1
     int sale_count; // 물건의 판매량
-    int margin_percent; // 물건의 마진율
+    float margin_percent; // 물건의 마진율(int -> float)
     int margin; // 물건의 마진
 } item;
 
@@ -38,11 +38,12 @@ typedef struct _saved_item {
 
 
 // admin function
-void admin_menu(int item_fd, int purchase_list_fd, user* userdata, int user_rows);
-void item_menu(int item_fd);
+void admin_menu(int item_fd, int purchase_list_fd, user* userdata, int user_rows, item* itemdata, int item_rows);
+void item_menu(item *itemdata, int rows);
 void userdata_menu(user* userdata, int user_rows);
 void analyze_menu(int item_fd, int purchase_list_fd);
 void discount_menu(int item_fd);
+
 // userDB function
 int initUser(user **userdata,  FILE *user_fp);
 void printUser(user *userdat, int rows);
@@ -51,13 +52,18 @@ void saveUser(user *userdata, int rows);
 int addUser(user **userdata, int rows);
 int delUser(user **userdata, int rows);
 
+int initItem(item **itemdata, int item_fd);
+int addItem(item **itemdata, int rows);
+int modItem(item *itemdata, int rows);
+void update_item_DB2(item *item_list, int rows);
+
 
 // customer function
 void customer(int item_fd, int saved_item_fd, int purchase_list_fd);
 void buy_item(item * item_list);
 void refund_item(item * item_list, FILE *purchase_list_fp);
 void update_item_DB(item *item_list);
-void search_item();
+void search_item(); // common function
 void check_purchase_list(FILE *purchase_list_fp);
 void open_refrigerator();
 
