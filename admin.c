@@ -266,9 +266,9 @@ int initItem(item **itemdata, int item_fd) {
     }
 
     for (int i = 0; i < rows; i++) {
-        fscanf(item_fp, "%s %d %d %d %d %d %d %f", &(*itemdata)[i].item_name, &(*itemdata)[i].item_id, &(*itemdata)[i].item_count, 
+        fscanf(item_fp, "%s %d %d %d %d %d %d %d", (*itemdata)[i].item_name, &(*itemdata)[i].item_id, &(*itemdata)[i].item_count, 
         &(*itemdata)[i].price, &(*itemdata)[i].dc_percent, &(*itemdata)[i].event_mode, &(*itemdata)[i].sale_count, &(*itemdata)[i].margin_percent);
-        (*itemdata)[i].margin = (*itemdata)[i].price * (*itemdata)[i].margin;
+        (*itemdata)[i].margin = (*itemdata)[i].price * (*itemdata)[i].margin_percent / 100;
     }
 
     printf("initialize itemDB successful!\n");
@@ -280,14 +280,15 @@ int addItem(item **itemdata, int rows) {
     int item_size; // 추가할 아이템 개수
     system("clear");
     printf("기존에 존재하지 않던 새로운 item을 추가합니다\n");
-    printf("추가할 물건 개수를 입력하세요: ");
+    printf("추가할 물건 종류 수를 입력하세요: ");
     scanf("%d", &item_size);
     rows += item_size;
 
     // 기존 데이터를 새로운 배열에 복사
     item *new_itemdata = (item*)malloc(rows * sizeof(item));
     for (int i = 0; i < rows - item_size; i++) {
-        new_itemdata[i].item_name = (*itemdata)[i].item_name;
+        strcpy(new_itemdata[i].item_name, (*itemdata)[i].item_name);
+        //new_itemdata[i].item_name = (*itemdata)[i].item_name;
         new_itemdata[i].item_id = (*itemdata)[i].item_id;
         new_itemdata[i].item_count = (*itemdata)[i].item_count;
         new_itemdata[i].price = (*itemdata)[i].price;
@@ -301,7 +302,7 @@ int addItem(item **itemdata, int rows) {
     // 새로운 데이터 추가
     for (int i = rows - item_size; i < rows; i++) {
         printf("상품명 입력: ");
-        scanf("%s", &new_itemdata[i].item_name);
+        scanf("%s", new_itemdata[i].item_name);
         printf("물건 id 입력: ");
         scanf("%d", &new_itemdata[i].item_id);
         printf("발주할 물건의 수량 입력: ");
@@ -314,8 +315,8 @@ int addItem(item **itemdata, int rows) {
         scanf("%d", &new_itemdata[i].event_mode);
         new_itemdata[i].sale_count = 0;
         printf("물건의 마진율 설정: ");
-        scanf("%f", &new_itemdata[i].margin_percent);
-        new_itemdata[i].sale_count = new_itemdata[i].price * new_itemdata[i].margin_percent;
+        scanf("%d", &new_itemdata[i].margin_percent);
+        new_itemdata[i].margin = new_itemdata[i].price * new_itemdata[i].margin_percent / 100;
     }
 
     free(*itemdata);
@@ -379,6 +380,7 @@ int modItem(item *itemdata, int item_rows) {
     for (int i = 0; i < item_rows; i++) {
         if (itemdata[i].item_id == new_itemid) {
             idx = i;
+            break;
         }
     }
     if (idx == -1) {
@@ -386,7 +388,8 @@ int modItem(item *itemdata, int item_rows) {
         return addItem(&itemdata, item_rows);
     }
     else {
-        printf("%s 의 수량은 %d개 입니다.\n", itemdata[idx].item_name, itemdata[idx].item_count);
+        printf("idx: %d\n", idx);
+        printf("현재 %s 의 수량은 %d개 입니다.\n", itemdata[idx].item_name, itemdata[idx].item_count);
         printf("발주하실 물품의 수량을 입력해주세요: ");
         scanf("%d", &addcount);
         itemdata[idx].item_count += addcount;
@@ -399,7 +402,7 @@ int modItem(item *itemdata, int item_rows) {
 void update_item_DB2(item *item_list, int rows){
     FILE *item_fp = fopen("data/itemDB.txt", "w");
     for (int i = 0; i < rows; i++) {
-        fprintf(item_fp, "%s %d %d %d %d %d %d %f\n", item_list[i].item_name, item_list[i].item_id, item_list[i].item_count, item_list[i].price, item_list[i].dc_percent, item_list[i].event_mode, item_list[i].sale_count, item_list[i].margin_percent);
+        fprintf(item_fp, "%s %d %d %d %d %d %d %d\n", item_list[i].item_name, item_list[i].item_id, item_list[i].item_count, item_list[i].price, item_list[i].dc_percent, item_list[i].event_mode, item_list[i].sale_count, item_list[i].margin_percent);
     }
     fclose(item_fp);
 }
@@ -428,17 +431,73 @@ void item_menu(item *itemdata, int item_rows) { // need to merge with customer.c
     }
 }
 
-void analyze_menu(int item_fd, int purchase_list_fd) {
-    system("clear");
-    printf("analyze_menu\n");
-    sleep(5);
-    return;
+void init_purchase_list(purchase_list **p_list) {
+    
 }
-void discount_menu(int item_fd) {
+
+void analyze_menu(int item_fd, int purchase_list_fd) {
+    while (1) {
+        int menu; // 메뉴 번호를 입력받아 저장하는 변수
+        system("clear");
+        printf("경영주님, 환영합니다!\n");
+        printf("---------------------------------------------\n");
+        printf("1. 월간 분석\n");
+        printf("2. 일간 분석\n");
+        printf("3. total 분석\n");
+        printf("4. 전체 구매내역 보기\n");
+        printf("0. 이전 메뉴로 돌아가기\n");
+        printf("원하는 기능을 선택하여 입력하세요: ");
+        scanf("%d", &menu);
+        switch (menu) {
+            case 0:
+                return;
+            case 1:
+                break;
+            case 2:
+                break;
+            case 3:
+                break;
+            case 4:
+                break;
+        }
+    }
+}
+
+void discount_menu(item *itemdata, int rows) {
+    int new_itemid;
+    int idx = -1;
+    int addcount;
     system("clear");
-    printf("discount_menu\n");
-    sleep(5);
-    return;
+    printf("현재 할인 / 행사 중인 물품 목록\n");
+    printf("-------------------------------------\n");
+    for (int i = 0; i < rows; i++) {
+        if (itemdata[i].event_mode != 0 || itemdata[i].dc_percent != 0) {
+            printf("%s / id: %d / 정가: %d / 할인율: %d / 이벤트모드 : %d\n", itemdata[i].item_name, itemdata[i].item_id, itemdata[i].price, itemdata[i].dc_percent, itemdata[i].event_mode);
+        }
+    }
+    while (1) {
+        printf("할인 정책을 수정할 물건의 ID를 입력해주세요(-1 입력시 종료): ");
+        scanf("%d", &new_itemid);
+        if (new_itemid == -1) {
+            break;
+        }
+        for (int i = 0; i < rows; i++) {
+            if (itemdata[i].item_id == new_itemid) {
+                idx = i;
+                break;
+            }
+        }
+        if (idx == -1) {
+            printf("잘못 입력하셨습니다\n");
+        }
+        else {
+            printf("물건의 할인율 입력: ");
+            scanf("%d", &itemdata[idx].dc_percent);
+            printf("물건의 이벤트모드(일반:0 / 1+1-> 1 / 2 + 1-> 2) 입력: ");
+            scanf("%d", &itemdata[idx].event_mode);
+        }
+    }
+    update_item_DB2(itemdata, rows);
 }
 
 void admin_menu(int item_fd, int purchase_list_fd, user* userdata, int user_rows, item* itemdata, int item_rows) {
@@ -475,7 +534,7 @@ void admin_menu(int item_fd, int purchase_list_fd, user* userdata, int user_rows
                 analyze_menu(item_fd, purchase_list_fd);
                 break;
             case 4:
-                discount_menu(item_fd);
+                discount_menu(itemdata, item_rows);
                 break;
         }
     }
