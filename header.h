@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <time.h>
+#define MAX_ITEMS 10
 
 typedef struct _user {
     int grade; // 0번이면 사장, 1번이면 알바
@@ -29,8 +30,18 @@ typedef struct _purchase_list {
     int hour;
     int min;
     int purchase_num; // 구매 일련번호(= 영수증 번호)
-    int id_list[100][2]; // 구매 물건 리스트(item ID, item Count) (동적할당)
+    int id_list[MAX_ITEMS][2]; // 구매 물건 리스트(item ID, item Count)
 } purchase_list;
+
+typedef struct _item_sold {
+    int item_id;
+    int total_quantity_sold;
+} item_sold;
+
+typedef struct _item_sales_amount {
+    int item_id;
+    int total_sales_amount;
+} item_sales_amount;
 
 typedef struct _saved_item {
     int **item_list; // 저장된 물건 리스트(item id, item count) (동적할당)
@@ -38,7 +49,7 @@ typedef struct _saved_item {
 
 
 // admin function
-void admin_menu(int item_fd, int purchase_list_fd, user* userdata, int user_rows, item* itemdata, int item_rows);
+void admin_menu(user* userdata, int user_rows, item* itemdata, int item_rows, purchase_list *purchase_data, int purchase_row);
 void item_menu(item *itemdata, int rows);
 void userdata_menu(user* userdata, int user_rows);
 
@@ -55,8 +66,8 @@ int addItem(item **itemdata, int rows);
 int modItem(item *itemdata, int rows);
 void update_item_DB2(item *item_list, int rows);
 
-void analyze_menu(int item_fd, int purchase_list_fd);
 void discount_menu(item *itemdata, int rows);
+void analyze_menu(item* itemdata, int item_row, purchase_list *purchase_data, int purchase_row);
 
 
 // customer function

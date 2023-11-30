@@ -323,6 +323,9 @@ int addItem(item **itemdata, int rows) {
     *itemdata = new_itemdata;
     update_item_DB2(*itemdata, rows);
     printf("add item to itemDB successful!\n");
+    fflush(stdin);
+    printf("아무 키나 누르면 이전 메뉴로 돌아갑니다...\n");
+    getchar();
     return rows;
 }
 
@@ -395,6 +398,9 @@ int modItem(item *itemdata, int item_rows) {
         itemdata[idx].item_count += addcount;
         update_item_DB2(itemdata, item_rows);
         printf("발주 후 %s 의 수량은 %d개 입니다.\n", itemdata[idx].item_name, itemdata[idx].item_count);
+        fflush(stdin);
+        printf("아무 키나 누르면 이전 메뉴로 돌아갑니다...\n");
+        getchar();
         return item_rows;
     }
 }
@@ -431,20 +437,391 @@ void item_menu(item *itemdata, int item_rows) { // need to merge with customer.c
     }
 }
 
-void init_purchase_list(purchase_list **p_list) {
+int init_purchase_list(purchase_list **purchase_data, int purchase_fd) {
+    int rows = 0;
+    char buf[BUFFSIZE];
+    FILE *purchase_fp = fdopen(purchase_fd, "r");
     
+    if (purchase_fp == NULL) {
+        fprintf(stderr, "fd open error\n");
+        exit(1);
+    }
+
+    while (fgets(buf, BUFFSIZE, purchase_fp) != NULL) {
+        if (buf[0] == '\n') {
+            rows++;
+        }
+    }
+    fseek(purchase_fp, 0, SEEK_SET);
+
+    *purchase_data = (purchase_list*)malloc(rows * sizeof(purchase_list));
+    if (*purchase_data == NULL) {
+        fprintf(stderr, "memory allocation error\n");
+        exit(1);
+    }
+
+    for (int i = 0; i < rows; i++) {
+        fgets(buf, BUFFSIZE, purchase_fp);
+        sscanf(buf, "%d %d %d %d %d %d", &(*purchase_data)[i].year, &(*purchase_data)[i].month, &(*purchase_data)[i].day, &(*purchase_data)[i].hour, &(*purchase_data)[i].min, &(*purchase_data)[i].purchase_num);
+        for (int j = 0; j < 100; j++) {
+            fgets(buf, BUFFSIZE, purchase_fp);
+            if (buf[0] == '\n' || buf[0] == '\0') {
+                break;
+            }
+            else {
+                sscanf(buf, "%d %d", &(*purchase_data)[i].id_list[j][0], &(*purchase_data)[i].id_list[j][1]);
+            }
+        }
+    }
+
+    printf("initialize purchase_list_DB successful!\n");
+    sleep(1);
+    return rows; // 여기서 rows --> 영수증 개수
 }
 
-void analyze_menu(int item_fd, int purchase_list_fd) {
+void print_purchase_data(purchase_list *purchase_data, int num_purchases) {
+    int year, month, day;
+
+    // 입력 받은 년/월/일 정보
+    printf("년을 입력하세요: ");
+    scanf("%d", &year);
+    printf("월을 입력하세요: ");
+    scanf("%d", &month);
+    printf("일을 입력하세요: ");
+    scanf("%d", &day);
+
+    // 입력 받은 날짜로 영수증 데이터 출력
+    printf("%04d년 %02d월 %02d일의 영수증 데이터:\n", year, month, day);
+
+    for (int i = 0; i < num_purchases; i++) {
+        // 해당 날짜와 일치하는 영수증만 출력
+        if (purchase_data[i].year == year && purchase_data[i].month == month && purchase_data[i].day == day) {
+            printf("Purchase %d:\n", purchase_data[i].purchase_num);
+            printf("Date: %04d-%02d-%02d %02d:%02d\n", purchase_data[i].year, purchase_data[i].month, purchase_data[i].day, purchase_data[i].hour, purchase_data[i].min);
+
+            printf("Items:\n");
+            for (int j = 0; j < 100; j++) {
+                if (purchase_data[i].id_list[j][0] == 0 && purchase_data[i].id_list[j][1] == 0) {
+                    // End of items
+                    break;
+                }
+                printf("Item ID: %d, 수량: %d\n", purchase_data[i].id_list[j][0], purchase_data[i].id_list[j][1]);
+            }
+
+            printf("\n");
+        }
+    }
+
+    fflush(stdin);
+    printf("아무 키나 누르면 이전 메뉴로 돌아갑니다...\n");
+    getchar();
+}
+
+void print_purchase_data_by_receipt_number(purchase_list *purchase_data, int num_purchases) {
+    int receipt_number;
+
+    // 입력 받은 영수증 번호 정보
+    printf("영수증 번호를 입력하세요: ");
+    scanf("%d", &receipt_number);
+
+    // 입력 받은 영수증 번호로 영수증 데이터 출력
+    printf("%d번 영수증 데이터:\n", receipt_number);
+
+    for (int i = 0; i < num_purchases; i++) {
+        // 해당 영수증 번호와 일치하는 영수증만 출력
+        if (purchase_data[i].purchase_num == receipt_number) {
+            printf("Purchase %d:\n", purchase_data[i].purchase_num);
+            printf("Date: %04d-%02d-%02d %02d:%02d\n", purchase_data[i].year, purchase_data[i].month, purchase_data[i].day, purchase_data[i].hour, purchase_data[i].min);
+
+            printf("Items:\n");
+            for (int j = 0; j < 100; j++) {
+                if (purchase_data[i].id_list[j][0] == 0 && purchase_data[i].id_list[j][1] == 0) {
+                    // End of items
+                    break;
+                }
+                printf("Item ID: %d, 수량: %d\n", purchase_data[i].id_list[j][0], purchase_data[i].id_list[j][1]);
+            }
+
+            printf("\n");
+        }
+    }
+
+    fflush(stdin);
+    printf("아무 키나 누르면 이전 메뉴로 돌아갑니다...\n");
+    getchar();
+}
+
+int compare_desc(const void *a, const void *b) {
+    return ((item_sold *)b)->total_quantity_sold - ((item_sold *)a)->total_quantity_sold;
+}
+
+void week_analyze(item *item_data, purchase_list *purchase_data, int num_purchases) {
+    system("clear");
+    time_t timer; // time_t type 변수
+    struct tm *t; // time 구조체 인스턴스
+
+    // Get current time
+    time(&timer);
+    t = localtime(&timer);
+
+    int current_day = t->tm_mday; // Current day
+    int current_month = t->tm_mon + 1; // Current month
+    int current_year = t->tm_year + 1900; // Current year
+
+    // Create an array to store the quantity sold and total sales amount for each item
+    item_sold items_sold[MAX_ITEMS] = {0};
+    item_sales_amount items_sales_amount[MAX_ITEMS] = {0};
+
+    // Iterate over purchases
+    for (int i = 0; i < num_purchases; i++) {
+        int purchase_day = purchase_data[i].day;
+        int purchase_month = purchase_data[i].month;
+        int purchase_year = purchase_data[i].year;
+
+        // Check if the purchase is within the last 7 days
+        if (current_year == purchase_year) {
+            if (current_month == purchase_month) {
+                if (current_day - purchase_day <= 7 && current_day - purchase_day >= 0) {
+                    // Iterate over items in the purchase
+                    for (int j = 0; j < MAX_ITEMS && purchase_data[i].id_list[j][0] != 0; j++) {
+                        int item_id = purchase_data[i].id_list[j][0];
+                        int quantity = purchase_data[i].id_list[j][1];
+
+                        // Update the total quantity sold for the item
+                        items_sold[item_id - 1].item_id = item_id;
+                        items_sold[item_id - 1].total_quantity_sold += quantity;
+
+                        // Update the total sales amount for the item
+                        items_sales_amount[item_id - 1].item_id = item_id;
+                        items_sales_amount[item_id - 1].total_sales_amount +=
+                            quantity * item_data[item_id - 1].price * (100 - item_data[item_id - 1].dc_percent) / 100;
+                    }
+                }
+            }
+        }
+    }
+
+    // Sort the items based on quantity sold in descending order
+    qsort(items_sold, MAX_ITEMS, sizeof(item_sold), compare_desc);
+
+    // Print the total quantity sold for each item
+    printf("Recent Sales for Each Item (판매량 내림차순):\n");
+    printf("===========================================\n");
+    for (int i = 0; i < MAX_ITEMS; i++) {
+        if (items_sold[i].item_id != 0) {
+            printf("Item ID: %d, Total Quantity Sold: %d\n", items_sold[i].item_id, items_sold[i].total_quantity_sold);
+        }
+    }
+
+    // Sort the items based on total sales amount in descending order
+    qsort(items_sales_amount, MAX_ITEMS, sizeof(item_sold), compare_desc);
+
+    // Print the total sales amount for each item
+    printf("Recent Sales for Each Item (판매 금액 내림차순):\n");
+    printf("===========================================\n");
+    for (int i = 0; i < MAX_ITEMS; i++) {
+        if (items_sales_amount[i].item_id != 0) {
+            printf("Item ID: %d, Total Sales Amount: %d\n", items_sales_amount[i].item_id,
+                   items_sales_amount[i].total_sales_amount);
+        }
+    }
+    printf("===========================================\n");
+    fflush(stdin);
+    printf("아무 키나 누르면 이전 메뉴로 돌아갑니다...\n");
+    getchar();
+}
+
+void month_analyze(item *item_data, purchase_list *purchase_data, int num_purchases) {
+    system("clear");
+    time_t timer; // time_t type 변수
+    struct tm *t; // time 구조체 인스턴스
+
+    // Get current time
+    time(&timer);
+    t = localtime(&timer);
+
+    int current_month = t->tm_mon + 1; // Current month
+    int current_year = t->tm_year + 1900; // Current year
+
+    // Create an array to store the quantity sold and total sales amount for each item
+    item_sold items_sold[MAX_ITEMS] = {0};
+    item_sales_amount items_sales_amount[MAX_ITEMS] = {0};
+
+    // Iterate over purchases
+    for (int i = 0; i < num_purchases; i++) {
+        int purchase_month = purchase_data[i].month;
+        int purchase_year = purchase_data[i].year;
+
+        // Check if the purchase is within the last 30 days (previous month)
+        if (current_year == purchase_year) {
+            if ((current_month - purchase_month == 1 && current_month != 1) ||
+                (current_month == 1 && purchase_month == 12)) {
+                // Iterate over items in the purchase
+                for (int j = 0; j < MAX_ITEMS && purchase_data[i].id_list[j][0] != 0; j++) {
+                    int item_id = purchase_data[i].id_list[j][0];
+                    int quantity = purchase_data[i].id_list[j][1];
+
+                    // Update the total quantity sold for the item
+                    items_sold[item_id - 1].item_id = item_id;
+                    items_sold[item_id - 1].total_quantity_sold += quantity;
+
+                    // Update the total sales amount for the item
+                    items_sales_amount[item_id - 1].item_id = item_id;
+                    items_sales_amount[item_id - 1].total_sales_amount +=
+                        quantity * item_data[item_id - 1].price * (100 - item_data[item_id - 1].dc_percent) / 100;
+                }
+            }
+        }
+    }
+
+    // Sort the items based on quantity sold in descending order
+    qsort(items_sold, MAX_ITEMS, sizeof(item_sold), compare_desc);
+
+    // Print the total quantity sold for each item
+    printf("Recent Sales for Each Item (판매량 내림차순):\n");
+    printf("===========================================\n");
+    for (int i = 0; i < MAX_ITEMS; i++) {
+        if (items_sold[i].item_id != 0) {
+            printf("Item ID: %d, Total Quantity Sold: %d\n", items_sold[i].item_id, items_sold[i].total_quantity_sold);
+        }
+    }
+
+    // Sort the items based on total sales amount in descending order
+    qsort(items_sales_amount, MAX_ITEMS, sizeof(item_sales_amount), compare_desc);
+
+    // Print the total sales amount for each item
+    printf("Recent Sales for Each Item (판매 금액 내림차순):\n");
+    printf("===========================================\n");
+    for (int i = 0; i < MAX_ITEMS; i++) {
+        if (items_sales_amount[i].item_id != 0) {
+            printf("Item ID: %d, Total Sales Amount: %d\n", items_sales_amount[i].item_id,
+                   items_sales_amount[i].total_sales_amount);
+        }
+    }
+    printf("===========================================\n");
+    fflush(stdin);
+    printf("아무 키나 누르면 이전 메뉴로 돌아갑니다...\n");
+    getchar();
+}
+
+void year_analyze(item *item_data, purchase_list *purchase_data, int num_purchases) {
+    system("clear");
+    time_t timer; // time_t type 변수
+    struct tm *t; // time 구조체 인스턴스
+
+    // Get current time
+    time(&timer);
+    t = localtime(&timer);
+
+    int current_month = t->tm_mon + 1; // Current month
+    int current_year = t->tm_year + 1900; // Current year
+
+    // Create an array to store the quantity sold and total sales amount for each item
+    item_sold items_sold[MAX_ITEMS] = {0};
+    item_sales_amount items_sales_amount[MAX_ITEMS] = {0};
+
+    // Iterate over purchases
+    for (int i = 0; i < num_purchases; i++) {
+        int purchase_month = purchase_data[i].month;
+        int purchase_year = purchase_data[i].year;
+
+        // Check if the purchase is within the current year
+        if (current_year == purchase_year) {
+            // Iterate over items in the purchase
+            for (int j = 0; j < MAX_ITEMS && purchase_data[i].id_list[j][0] != 0; j++) {
+                int item_id = purchase_data[i].id_list[j][0];
+                int quantity = purchase_data[i].id_list[j][1];
+
+                // Update the total quantity sold for the item
+                items_sold[item_id - 1].item_id = item_id;
+                items_sold[item_id - 1].total_quantity_sold += quantity;
+
+                // Update the total sales amount for the item
+                items_sales_amount[item_id - 1].item_id = item_id;
+                items_sales_amount[item_id - 1].total_sales_amount +=
+                    quantity * item_data[item_id - 1].price * (100 - item_data[item_id - 1].dc_percent) / 100;
+            }
+        }
+    }
+
+    // Sort the items based on quantity sold in descending order
+    qsort(items_sold, MAX_ITEMS, sizeof(item_sold), compare_desc);
+
+    // Print the total quantity sold for each item
+    printf("Recent Sales for Each Item (판매량 내림차순):\n");
+    printf("===========================================\n");
+    for (int i = 0; i < MAX_ITEMS; i++) {
+        if (items_sold[i].item_id != 0) {
+            printf("Item ID: %d, Total Quantity Sold: %d\n", items_sold[i].item_id, items_sold[i].total_quantity_sold);
+        }
+    }
+
+    // Sort the items based on total sales amount in descending order
+    qsort(items_sales_amount, MAX_ITEMS, sizeof(item_sales_amount), compare_desc);
+
+    // Print the total sales amount for each item
+    printf("Recent Sales for Each Item (판매 금액 내림차순):\n");
+    printf("===========================================\n");
+    for (int i = 0; i < MAX_ITEMS; i++) {
+        if (items_sales_amount[i].item_id != 0) {
+            printf("Item ID: %d, Total Sales Amount: %d\n", items_sales_amount[i].item_id,
+                   items_sales_amount[i].total_sales_amount);
+        }
+    }
+    printf("===========================================\n");
+    fflush(stdin);
+    printf("아무 키나 누르면 이전 메뉴로 돌아갑니다...\n");
+    getchar();
+}
+
+void time_analyze(purchase_list *purchase_data, int num_purchases) {
+    // Create an array to store the number of purchases for each hour
+    int purchases_per_hour[24] = {0};
+
+    // Iterate over purchases
+    for (int i = 0; i < num_purchases; i++) {
+        int purchase_hour = purchase_data[i].hour;
+
+        // Increment the count for the corresponding hour
+        purchases_per_hour[purchase_hour]++;
+    }
+
+    // Sort the hours based on the number of purchases in descending order
+    for (int i = 0; i < 24; i++) {
+        for (int j = i + 1; j < 24; j++) {
+            if (purchases_per_hour[i] < purchases_per_hour[j]) {
+                // Swap values if needed
+                int temp_count = purchases_per_hour[i];
+                purchases_per_hour[i] = purchases_per_hour[j];
+                purchases_per_hour[j] = temp_count;
+            }
+        }
+    }
+
+    // Print the results
+    printf("Busiest Hours of the Day (내림차순):\n");
+    printf("===========================================\n");
+    for (int i = 0; i < 24; i++) {
+        printf("Hour: %02d:00 - %02d:59, Number of Purchases: %d\n", i, i, purchases_per_hour[i]);
+    }
+    printf("===========================================\n");
+    fflush(stdin);
+    printf("아무 키나 누르면 이전 메뉴로 돌아갑니다...\n");
+    getchar();
+}
+
+void analyze_menu(item* itemdata, int item_row, purchase_list *purchase_data, int purchase_row) {
     while (1) {
         int menu; // 메뉴 번호를 입력받아 저장하는 변수
         system("clear");
         printf("경영주님, 환영합니다!\n");
         printf("---------------------------------------------\n");
-        printf("1. 월간 분석\n");
-        printf("2. 일간 분석\n");
-        printf("3. total 분석\n");
-        printf("4. 전체 구매내역 보기\n");
+        printf("1. 최근 일주일 분석\n");
+        printf("2. 월간 분석\n");
+        printf("3. 연간 분석\n");
+        printf("4. 시간대별 분석\n");
+        printf("5. 구매내역 확인하기(일자 기준)\n");
+        printf("6. 구매내역 확인하기(영수증 번호 기준)\n");
         printf("0. 이전 메뉴로 돌아가기\n");
         printf("원하는 기능을 선택하여 입력하세요: ");
         scanf("%d", &menu);
@@ -452,12 +829,22 @@ void analyze_menu(int item_fd, int purchase_list_fd) {
             case 0:
                 return;
             case 1:
+                week_analyze(itemdata, purchase_data, purchase_row);
                 break;
             case 2:
+                month_analyze(itemdata, purchase_data, purchase_row);
                 break;
             case 3:
+                year_analyze(itemdata, purchase_data, purchase_row);
                 break;
             case 4:
+                time_analyze(purchase_data, purchase_row);
+                break;
+            case 5:
+                print_purchase_data(purchase_data, purchase_row);
+                break;
+            case 6:
+                print_purchase_data_by_receipt_number(purchase_data, purchase_row);
                 break;
         }
     }
@@ -500,10 +887,9 @@ void discount_menu(item *itemdata, int rows) {
     update_item_DB2(itemdata, rows);
 }
 
-void admin_menu(int item_fd, int purchase_list_fd, user* userdata, int user_rows, item* itemdata, int item_rows) {
+void admin_menu(user* userdata, int user_rows, item* itemdata, int item_rows, purchase_list *purchase_data, int purchase_row) {
     time_t timer; // time_t type 변수
     struct tm *t; // time 구조체 인스턴스
-    FILE *item_fp = fdopen(item_fd, "r");
     while (1) {
         int menu; // 메뉴 번호를 입력받아 저장하는 변수
 
@@ -531,7 +917,7 @@ void admin_menu(int item_fd, int purchase_list_fd, user* userdata, int user_rows
                 userdata_menu(userdata, user_rows);
                 break;
             case 3:
-                analyze_menu(item_fd, purchase_list_fd);
+                analyze_menu(itemdata, item_rows, purchase_data, purchase_row);
                 break;
             case 4:
                 discount_menu(itemdata, item_rows);
@@ -547,10 +933,12 @@ int main(){
     }
     user *userdata;
     item *itemdata;
+    purchase_list *purchase_data;
     int item_fd = open("data/itemDB.txt", O_RDWR);
-    int purchase_list_fd = open("data/purchase_list_DB.txt", O_RDWR);
+    int purchase_list_fd = open("data/random_purchase_data.txt", O_RDWR);
     int saved_item_fd = open("data/saved_item_DB.txt", O_RDWR);
     int user_rows = initUser(&userdata, user_fp);
     int item_rows = initItem(&itemdata, item_fd);
-    admin_menu(item_fd, purchase_list_fd, userdata, user_rows, itemdata, item_rows);
+    int purchase_row = init_purchase_list(&purchase_data, purchase_list_fd);
+    admin_menu(userdata, user_rows, itemdata, item_rows, purchase_data, purchase_row);
 }
