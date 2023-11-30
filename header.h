@@ -30,6 +30,7 @@ typedef struct _purchase_list {
     int hour;
     int min;
     int purchase_num; // 구매 일련번호(= 영수증 번호)
+    // int item_list**
     int id_list[MAX_ITEMS][2]; // 구매 물건 리스트(item ID, item Count)
 } purchase_list;
 
