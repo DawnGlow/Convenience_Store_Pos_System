@@ -8,12 +8,12 @@
 #include <string.h>
 #define BUFFSIZE 8192
 
-void buy_item(item * item_list);
+void buy_item(item * item_list, purchase_list *purchase_list);
 void refund_item(item * item_list, FILE *purchase_list_fp);
 void update_item_DB(item *item_list);
 void search_item();
 void check_purchase_list(FILE *purchase_list_fp);
-void open_refrigerator();
+void open_refrigerator(FILE *saved_item_fp);
 
 
 void customer(int item_fd, int saved_item_fd, int purchase_list_fd){
@@ -21,8 +21,12 @@ void customer(int item_fd, int saved_item_fd, int purchase_list_fd){
     FILE *item_fp = fdopen(item_fd, "r");
     FILE *saved_item_fp = fdopen(saved_item_fd, "a+");
     FILE *purchase_list_fp = fdopen(purchase_list_fd, "a+");
-    purchase_list *purchase_list;
-
+    purchase_list purchase_list;
+    for (int i = 0; i < 10; i++) {
+        purchase_list.id_list[i][0] = -1;
+        purchase_list.id_list[i][1] = -1;
+    }
+    
     write(STDOUT_FILENO, "고객 모드입니다.\n", 25);
 
     jmp_buf env;
@@ -36,11 +40,11 @@ void customer(int item_fd, int saved_item_fd, int purchase_list_fd){
     int choice;
     char **itemDB_name_list;
     int **itemDB;
-    int numRows = 20;
+    int numRows = 10;
     int numCols = 8;
     itemDB_name_list = (char**)malloc(numRows * sizeof(char*));
     for (int i = 0; i < numRows; i++) {
-        itemDB_name_list[i] = (char*)malloc(20 * sizeof(char));
+        itemDB_name_list[i] = (char*)malloc(10 * sizeof(char));
     }
     itemDB = (int**)malloc(numRows * sizeof(int*));
     for (int i = 0; i < numRows; i++) {
@@ -50,9 +54,8 @@ void customer(int item_fd, int saved_item_fd, int purchase_list_fd){
         fscanf(item_fp, "%s %d %d %d %d %d %d %d", itemDB_name_list[i], &itemDB[i][1], &itemDB[i][2], &itemDB[i][3], &itemDB[i][4], &itemDB[i][5], &itemDB[i][6], &itemDB[i][7]);
     }
 
-    item item_list[20];
-    for (int i = 0; i < 20; i++) {
-        item_list[i].item_name = malloc(strlen(itemDB_name_list[i]) + 1);
+    item item_list[10];
+    for (int i = 0; i < 10; i++) {
         strcpy(item_list[i].item_name, itemDB_name_list[i]);
         item_list[i].item_id = itemDB[i][1];
         item_list[i].item_count = itemDB[i][2];
@@ -64,15 +67,13 @@ void customer(int item_fd, int saved_item_fd, int purchase_list_fd){
         item_list[i].margin = (double)item_list[i].price * item_list[i].margin_percent / 100.0;
     }
 
-
-
     if ((n = read(STDIN_FILENO, cmd_buf, BUFFSIZE)) < 0)
-        write(STDOUT_FILENO, "read error\n", 11);
+        write(STDOUT_FILENO, "read error\n", 12);
 
     choice = atoi(cmd_buf);
     switch (choice) {
         case 1:
-            buy_item(item_list);
+            buy_item(item_list, &purchase_list);
             update_item_DB(item_list);
             longjmp(env, 1);
             break;
@@ -94,35 +95,19 @@ void customer(int item_fd, int saved_item_fd, int purchase_list_fd){
             longjmp(env, 1);
             break;
         case 0:
-            write(STDOUT_FILENO, "프로그램을 종료합니다.\n", 31);
-
-            time_t t = time(NULL);
-            struct tm tm = *localtime(&t);           
-            purchase_list->year = tm.tm_year + 1900;
-            purchase_list->month = tm.tm_mon + 1;
-            purchase_list->day =  tm.tm_mday;
-            purchase_list->hour = tm.tm_hour;
-            purchase_list->min = tm.tm_min;
-            purchase_list->purchase_num = rand() % 90000 + 10000;
-            purchase_list->item_list = (int**)malloc(20 * sizeof(int*));
-            for (int i = 0; i < 20; i++) {
-                purchase_list->item_list[i] = (int*)malloc(2 * sizeof(int));
+            write(STDOUT_FILENO, "프로그램을 종료합니다.\n", 34);
+            for (int i = 0 ; i < 10; i++){
+                printf("%d %d\n", purchase_list.id_list[i][0], purchase_list.id_list[i][1]);
             }
-            for (int i = 0; i < 20; i++) {
-                if (item_list->sale_count != itemDB[i][6]){
-                    purchase_list->item_list[i][0] = item_list[i].item_id;
-                    purchase_list->item_list[i][1] = item_list[i].sale_count - itemDB[i][6];
+            if (purchase_list.id_list[0][0] != -1){
+                fprintf(purchase_list_fp, "%d %d %d %d %d %d\n", purchase_list.year, purchase_list.month, purchase_list.hour, purchase_list.hour, purchase_list.min, purchase_list.purchase_num);
+                for (int i = 0; i < 10; i++) {
+                    if(purchase_list.id_list[i][0] != -1){
+                        fprintf(purchase_list_fp, "%d %d\n", purchase_list.id_list[i][0], purchase_list.id_list[i][1]);
+                    }
                 }
             }
-
-            fprintf(purchase_list_fp, "%d %d %d %d %d %d\n", purchase_list->year, purchase_list->month, purchase_list->day, purchase_list->hour, purchase_list->min, purchase_list->purchase_num);
-            for (int i = 0; i < 20; i++) {
-                if (purchase_list->item_list[i][0] != 0){
-                    fprintf(purchase_list_fp, "%d %d\n", purchase_list->item_list[i][0], purchase_list->item_list[i][1]);
-                }
-            }
-            exit(0);
-            break;
+            return;
         default:
             write(STDOUT_FILENO, "잘못된 입력입니다. 다시 시도해주세요.\n", 55);
             longjmp(env, 1);
@@ -131,7 +116,7 @@ void customer(int item_fd, int saved_item_fd, int purchase_list_fd){
 
 }
 
-void buy_item(item * item_list) {
+void buy_item(item * item_list, purchase_list *purchase_list) {
     write(STDOUT_FILENO, "물건 구매 기능입니다.\n", 31);
     int n;
     char buf[BUFFSIZE];
@@ -148,16 +133,16 @@ void buy_item(item * item_list) {
     write(STDOUT_FILENO, "구매할 물건의 ID를 입력하세요 :", 44);
     if ((n = read(STDIN_FILENO, buf, BUFFSIZE)) < 0)
     sscanf(buf, "%d", &item_id);
+    int temp_item_id = item_id;
 
     int wanted_item_index;
 
-    for (int i = 0; i < 20; i++) {
+    for (int i = 0; i < 10; i++) {
         if (item_id == item_list[i].item_id) {
             wanted_item_index = i -1;
             break;
         }
     }
-    printf("%d\n", wanted_item_index);
 
     if (item_list[wanted_item_index].item_count == 0) {
                 write(STDOUT_FILENO, "재고가 없습니다.\n", 31);
@@ -205,12 +190,25 @@ void buy_item(item * item_list) {
             
         }
             }
-    
-    
-    write(STDOUT_FILENO, "구매가 완료되었습니다.\n", 31);
+    time_t t = time(NULL);
+            struct tm tm = *localtime(&t);           
+            purchase_list->year = tm.tm_year + 1900;
+            purchase_list->month = tm.tm_mon + 1;
+            purchase_list->day =  tm.tm_mday;
+            purchase_list->hour = tm.tm_hour;
+            purchase_list->min = tm.tm_min;
+            purchase_list->purchase_num = rand() % 90000 + 10000;
+            for(int i = 0; i < 10; i++){
+                if (purchase_list->id_list[i][0] == -1){
+                    purchase_list->id_list[i][0] = item_list[wanted_item_index].item_id;
+                    purchase_list->id_list[i][1] = item_count;
+                    break;
+                }
+            }
 
+    write(STDOUT_FILENO, "구매가 완료되었습니다.\n", 34);
     write(STDOUT_FILENO, "개인 냉장고에 보관하실 제품이 있으신가요?\n", 61);
-    write(STDOUT_FILENO, "1. 있음\n2. 없음\n", 31);
+    write(STDOUT_FILENO, "1. 있음\n2. 없음\n", 21);
     int choice;
     if ((n = read(STDIN_FILENO, buf, BUFFSIZE)) < 0) 
         perror("read error");
@@ -246,9 +244,7 @@ void buy_item(item * item_list) {
         longjmp(env, 1);
     }
     
-    
-
-    
+   
     }   
 }
 void refund_item(item * item_list, FILE *purchase_list_fp) {
@@ -296,7 +292,7 @@ void refund_item(item * item_list, FILE *purchase_list_fp) {
                     }
                     else{
                         int wanted_item_index;
-                        for (int i = 0; i < 20; i++) {
+                        for (int i = 0; i < 10; i++) {
                             if (item_list[i].item_id == want_item_id) {
                                 wanted_item_index = i;
                             }
@@ -318,7 +314,7 @@ void refund_item(item * item_list, FILE *purchase_list_fp) {
 }
 void update_item_DB(item *item_list){
     FILE *item_fp = fopen("data/itemDB.txt", "w");
-    for (int i = 0; i < 20; i++) {
+    for (int i = 0; i < 10; i++) {
         if(item_list[i].item_count != 0){
         fprintf(item_fp, "%s %d %d %d %d %d %d %d\n", item_list[i].item_name, item_list[i].item_id, item_list[i].item_count, item_list[i].price, item_list[i].dc_percent, item_list[i].event_mode, item_list[i].sale_count, item_list[i].margin_percent);
     }
@@ -336,7 +332,7 @@ void search_item(){
     int *sale_count;
     int *margin_percent;
 
-    int numRows = 20;
+    int numRows = 10;
     int numCols = 8;
     item_name = (char**)malloc(numRows * sizeof(char*));
     for (int i = 0; i < numRows; i++) {

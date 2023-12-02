@@ -73,12 +73,12 @@ void analyze_menu(item* itemdata, int item_row, purchase_list *purchase_data, in
 
 // customer function
 void customer(int item_fd, int saved_item_fd, int purchase_list_fd);
-void buy_item(item * item_list);
+void buy_item(item * item_list, purchase_list *purchase_list);
 void refund_item(item * item_list, FILE *purchase_list_fp);
 void update_item_DB(item *item_list);
 void search_item(); // common function
 void check_purchase_list(FILE *purchase_list_fp);
-void open_refrigerator();
+void open_refrigerator(FILE *saved_item_fp);
 
 // login function
 user login( FILE *fp);
