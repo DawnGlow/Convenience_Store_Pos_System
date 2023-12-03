@@ -82,13 +82,14 @@ int main() {
     if (user1.grade == 0) {
         item *itemdata;
         purchase_list *purchase_data;
+        user *userdata;
         int item_fd = open("data/itemDB.txt", O_RDWR);
         int purchase_list_fd = open("data/random_purchase_data.txt", O_RDWR);
         int saved_item_fd = open("data/saved_item_DB.txt", O_RDWR);
-        int user_rows = initUser(&user1, user_fp);
+        int user_rows = initUser(&userdata, user_fp);
         int item_rows = initItem(&itemdata, item_fd);
         int purchase_row = init_purchase_list(&purchase_data, purchase_list_fd);
-        admin_menu(user_rows, user_rows, itemdata, item_rows, purchase_data, purchase_row);
+        admin_menu(userdata, user_rows, itemdata, item_rows, purchase_data, purchase_row);
     }
     else {
         int item_fd = open("data/itemDB.txt", O_RDWR);
