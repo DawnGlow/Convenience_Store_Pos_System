@@ -26,8 +26,8 @@ int initUser(user **userdata, FILE *user_fp) {
         fprintf(stderr, "memory allocation error\n");
         exit(1);
     }
-
-    for (int i = 0; i < rows; i++) {
+    int i;
+    for (i = 0; i < rows; i++) {
         fscanf(user_fp, "%d %d %d %d %d %d", &(*userdata)[i].grade, &(*userdata)[i].user_id, &(*userdata)[i].password, &(*userdata)[i].cph, &(*userdata)[i].start_time, &(*userdata)[i].end_time);
     }
 
@@ -39,7 +39,8 @@ int initUser(user **userdata, FILE *user_fp) {
 void printUser(user *userdata, int rows) {
     printf("userinfo 출력\n");
     sleep(1);
-    for (int i = 0; i < rows; i++) {
+    int i;
+    for (i = 0; i < rows; i++) {
         if (userdata[i].grade == 0) {
             printf("사장, ");
         } else {
@@ -59,7 +60,8 @@ void modUser(user *userdata, int rows) {
     system("clear");
     printf("사용자 정보를 변경할 사용자의 ID를 입력해주세요: ");
     scanf("%d", &ID);
-    for (int i = 0; i < rows; i++) {
+    int i;
+    for (i = 0; i < rows; i++) {
         if (userdata[i].user_id == ID) {
             idx = i;
             break;
@@ -122,7 +124,8 @@ void saveUser(user *userdata, int rows) {
         exit(1);
     }
     int cols = 6;
-    for (int i = 0; i < rows; i++) {
+    int i;
+    for (i = 0; i < rows; i++) {
         fprintf(user_fp, "%d %d %d %d %d %d\n", userdata[i].grade, userdata[i].user_id, userdata[i].password, userdata[i].cph, userdata[i].start_time, userdata[i].end_time);
     }
     printf("save userDB successful!\n");
@@ -139,7 +142,8 @@ int addUser(user **userdata, int rows) {
 
     // 기존 데이터를 새로운 배열에 복사
     user *new_userdata = (user*)malloc(rows * sizeof(user));
-    for (int i = 0; i < rows - user_size; i++) {
+    int i;
+    for (i = 0; i < rows - user_size; i++) {
         new_userdata[i].grade = (*userdata)[i].grade;
         new_userdata[i].user_id = (*userdata)[i].user_id;
         new_userdata[i].password = (*userdata)[i].password;
@@ -149,7 +153,7 @@ int addUser(user **userdata, int rows) {
     }
 
     // 새로운 데이터 추가
-    for (int i = rows - user_size; i < rows; i++) {
+    for (i = rows - user_size; i < rows; i++) {
         printf("%d번째 User 입니다.\n", i + 1);
         printf("직급(사장이면 0, 근무자면 1) 입력: ");
         scanf("%d", &new_userdata[i].grade);
@@ -179,7 +183,8 @@ int delUser(user **userdata, int rows) {
 
     // 삭제할 사용자를 찾아서 그 위치를 저장
     int delete_index = -1;
-    for (int i = 0; i < rows; i++) {
+    int i;
+    for (i = 0; i < rows; i++) {
         if ((*userdata)[i].user_id == user_id) {
             delete_index = i;
             break;
@@ -190,7 +195,7 @@ int delUser(user **userdata, int rows) {
         // 삭제할 사용자를 제외한 데이터를 새로운 배열에 복사
         user *new_userdata = (user*)malloc((rows - 1) * sizeof(user));
         int new_index = 0;
-        for (int i = 0; i < rows; i++) {
+        for (i = 0; i < rows; i++) {
             if (i != delete_index) {
                 new_userdata[new_index++] = (*userdata)[i];
             }
@@ -264,8 +269,8 @@ int initItem(item **itemdata, int item_fd) {
         fprintf(stderr, "memory allocation error\n");
         exit(1);
     }
-
-    for (int i = 0; i < rows; i++) {
+    int i;
+    for (i = 0; i < rows; i++) {
         fscanf(item_fp, "%s %d %d %d %d %d %d %d", (*itemdata)[i].item_name, &(*itemdata)[i].item_id, &(*itemdata)[i].item_count, 
         &(*itemdata)[i].price, &(*itemdata)[i].dc_percent, &(*itemdata)[i].event_mode, &(*itemdata)[i].sale_count, &(*itemdata)[i].margin_percent);
         (*itemdata)[i].margin = (*itemdata)[i].price * (*itemdata)[i].margin_percent / 100;
@@ -286,7 +291,8 @@ int addItem(item **itemdata, int rows) {
 
     // 기존 데이터를 새로운 배열에 복사
     item *new_itemdata = (item*)malloc(rows * sizeof(item));
-    for (int i = 0; i < rows - item_size; i++) {
+    int i;
+    for (i = 0; i < rows - item_size; i++) {
         strcpy(new_itemdata[i].item_name, (*itemdata)[i].item_name);
         //new_itemdata[i].item_name = (*itemdata)[i].item_name;
         new_itemdata[i].item_id = (*itemdata)[i].item_id;
@@ -300,7 +306,7 @@ int addItem(item **itemdata, int rows) {
     }
 
     // 새로운 데이터 추가
-    for (int i = rows - item_size; i < rows; i++) {
+    for (i = rows - item_size; i < rows; i++) {
         printf("상품명 입력: ");
         scanf("%s", new_itemdata[i].item_name);
         printf("물건 id 입력: ");
@@ -343,7 +349,8 @@ void search_item() { // customer function 사용
     int numRows = 20;
     int numCols = 8;
     item_name = (char**)malloc(numRows * sizeof(char*));
-    for (int i = 0; i < numRows; i++) {
+    int i;
+    for (i = 0; i < numRows; i++) {
         item_name[i] = (char*)malloc(40 * sizeof(char));
     }
     item_id = (int*)malloc(numRows * sizeof(int));
@@ -354,7 +361,7 @@ void search_item() { // customer function 사용
     sale_count = (int*)malloc(numRows * sizeof(int));
     margin_percent = (int*)malloc(numRows * sizeof(int));
 
-    int i = 0;
+    i = 0;
     while(fscanf(fp, "%s %d %d %d %d %d %d %d", item_name[i], &item_id[i], &item_count[i], &price[i], &dc_percent[i], &event_mode[i], &sale_count[i], &margin_percent[i]) > 0){
         char event_message[7];
 
@@ -380,7 +387,8 @@ int modItem(item *itemdata, int item_rows) {
     system("clear");
     printf("발주할 물건의 ID를 입력해주세요: ");
     scanf("%d", &new_itemid);
-    for (int i = 0; i < item_rows; i++) {
+    int i;
+    for (i = 0; i < item_rows; i++) {
         if (itemdata[i].item_id == new_itemid) {
             idx = i;
             break;
@@ -407,7 +415,8 @@ int modItem(item *itemdata, int item_rows) {
 
 void update_item_DB2(item *item_list, int rows){
     FILE *item_fp = fopen("data/itemDB.txt", "w");
-    for (int i = 0; i < rows; i++) {
+    int i;
+    for (i = 0; i < rows; i++) {
         fprintf(item_fp, "%s %d %d %d %d %d %d %d\n", item_list[i].item_name, item_list[i].item_id, item_list[i].item_count, item_list[i].price, item_list[i].dc_percent, item_list[i].event_mode, item_list[i].sale_count, item_list[i].margin_percent);
     }
     fclose(item_fp);
@@ -459,11 +468,12 @@ int init_purchase_list(purchase_list **purchase_data, int purchase_fd) {
         fprintf(stderr, "memory allocation error\n");
         exit(1);
     }
-
-    for (int i = 0; i < rows; i++) {
+    int i;
+    for (i = 0; i < rows; i++) {
         fgets(buf, BUFFSIZE, purchase_fp);
         sscanf(buf, "%d %d %d %d %d %d", &(*purchase_data)[i].year, &(*purchase_data)[i].month, &(*purchase_data)[i].day, &(*purchase_data)[i].hour, &(*purchase_data)[i].min, &(*purchase_data)[i].purchase_num);
-        for (int j = 0; j < 100; j++) {
+        int j;
+        for (j = 0; j < 100; j++) {
             fgets(buf, BUFFSIZE, purchase_fp);
             if (buf[0] == '\n' || buf[0] == '\0') {
                 break;
@@ -492,15 +502,16 @@ void print_purchase_data(purchase_list *purchase_data, int num_purchases) {
 
     // 입력 받은 날짜로 영수증 데이터 출력
     printf("%04d년 %02d월 %02d일의 영수증 데이터:\n", year, month, day);
-
-    for (int i = 0; i < num_purchases; i++) {
+    int i;
+    for (i = 0; i < num_purchases; i++) {
         // 해당 날짜와 일치하는 영수증만 출력
         if (purchase_data[i].year == year && purchase_data[i].month == month && purchase_data[i].day == day) {
             printf("Purchase %d:\n", purchase_data[i].purchase_num);
             printf("Date: %04d-%02d-%02d %02d:%02d\n", purchase_data[i].year, purchase_data[i].month, purchase_data[i].day, purchase_data[i].hour, purchase_data[i].min);
 
             printf("Items:\n");
-            for (int j = 0; j < 100; j++) {
+            int j;
+            for (j = 0; j < 100; j++) {
                 if (purchase_data[i].id_list[j][0] == 0 && purchase_data[i].id_list[j][1] == 0) {
                     // End of items
                     break;
@@ -526,15 +537,16 @@ void print_purchase_data_by_receipt_number(purchase_list *purchase_data, int num
 
     // 입력 받은 영수증 번호로 영수증 데이터 출력
     printf("%d번 영수증 데이터:\n", receipt_number);
-
-    for (int i = 0; i < num_purchases; i++) {
+    int i;
+    for (i = 0; i < num_purchases; i++) {
         // 해당 영수증 번호와 일치하는 영수증만 출력
         if (purchase_data[i].purchase_num == receipt_number) {
             printf("Purchase %d:\n", purchase_data[i].purchase_num);
             printf("Date: %04d-%02d-%02d %02d:%02d\n", purchase_data[i].year, purchase_data[i].month, purchase_data[i].day, purchase_data[i].hour, purchase_data[i].min);
 
             printf("Items:\n");
-            for (int j = 0; j < 100; j++) {
+            int j;
+            for (j = 0; j < 100; j++) {
                 if (purchase_data[i].id_list[j][0] == 0 && purchase_data[i].id_list[j][1] == 0) {
                     // End of items
                     break;
@@ -573,7 +585,8 @@ void week_analyze(item *item_data, purchase_list *purchase_data, int num_purchas
     item_sales_amount items_sales_amount[MAX_ITEMS] = {0};
 
     // Iterate over purchases
-    for (int i = 0; i < num_purchases; i++) {
+    int i;
+    for (i = 0; i < num_purchases; i++) {
         int purchase_day = purchase_data[i].day;
         int purchase_month = purchase_data[i].month;
         int purchase_year = purchase_data[i].year;
@@ -583,7 +596,8 @@ void week_analyze(item *item_data, purchase_list *purchase_data, int num_purchas
             if (current_month == purchase_month) {
                 if (current_day - purchase_day <= 7 && current_day - purchase_day >= 0) {
                     // Iterate over items in the purchase
-                    for (int j = 0; j < MAX_ITEMS && purchase_data[i].id_list[j][0] != 0; j++) {
+                    int j;
+                    for (j = 0; j < MAX_ITEMS && purchase_data[i].id_list[j][0] != 0; j++) {
                         int item_id = purchase_data[i].id_list[j][0];
                         int quantity = purchase_data[i].id_list[j][1];
 
@@ -607,7 +621,7 @@ void week_analyze(item *item_data, purchase_list *purchase_data, int num_purchas
     // Print the total quantity sold for each item
     printf("Recent Sales for Each Item (판매량 내림차순):\n");
     printf("===========================================\n");
-    for (int i = 0; i < MAX_ITEMS; i++) {
+    for (i = 0; i < MAX_ITEMS; i++) {
         if (items_sold[i].item_id != 0) {
             printf("Item ID: %d, Total Quantity Sold: %d\n", items_sold[i].item_id, items_sold[i].total_quantity_sold);
         }
@@ -619,7 +633,7 @@ void week_analyze(item *item_data, purchase_list *purchase_data, int num_purchas
     // Print the total sales amount for each item
     printf("Recent Sales for Each Item (판매 금액 내림차순):\n");
     printf("===========================================\n");
-    for (int i = 0; i < MAX_ITEMS; i++) {
+    for (i = 0; i < MAX_ITEMS; i++) {
         if (items_sales_amount[i].item_id != 0) {
             printf("Item ID: %d, Total Sales Amount: %d\n", items_sales_amount[i].item_id,
                    items_sales_amount[i].total_sales_amount);
@@ -648,7 +662,8 @@ void month_analyze(item *item_data, purchase_list *purchase_data, int num_purcha
     item_sales_amount items_sales_amount[MAX_ITEMS] = {0};
 
     // Iterate over purchases
-    for (int i = 0; i < num_purchases; i++) {
+    int i;
+    for (i = 0; i < num_purchases; i++) {
         int purchase_month = purchase_data[i].month;
         int purchase_year = purchase_data[i].year;
 
@@ -657,7 +672,8 @@ void month_analyze(item *item_data, purchase_list *purchase_data, int num_purcha
             if ((current_month - purchase_month == 1 && current_month != 1) ||
                 (current_month == 1 && purchase_month == 12)) {
                 // Iterate over items in the purchase
-                for (int j = 0; j < MAX_ITEMS && purchase_data[i].id_list[j][0] != 0; j++) {
+                int j;
+                for (j = 0; j < MAX_ITEMS && purchase_data[i].id_list[j][0] != 0; j++) {
                     int item_id = purchase_data[i].id_list[j][0];
                     int quantity = purchase_data[i].id_list[j][1];
 
@@ -680,7 +696,7 @@ void month_analyze(item *item_data, purchase_list *purchase_data, int num_purcha
     // Print the total quantity sold for each item
     printf("Recent Sales for Each Item (판매량 내림차순):\n");
     printf("===========================================\n");
-    for (int i = 0; i < MAX_ITEMS; i++) {
+    for (i = 0; i < MAX_ITEMS; i++) {
         if (items_sold[i].item_id != 0) {
             printf("Item ID: %d, Total Quantity Sold: %d\n", items_sold[i].item_id, items_sold[i].total_quantity_sold);
         }
@@ -692,7 +708,7 @@ void month_analyze(item *item_data, purchase_list *purchase_data, int num_purcha
     // Print the total sales amount for each item
     printf("Recent Sales for Each Item (판매 금액 내림차순):\n");
     printf("===========================================\n");
-    for (int i = 0; i < MAX_ITEMS; i++) {
+    for (i = 0; i < MAX_ITEMS; i++) {
         if (items_sales_amount[i].item_id != 0) {
             printf("Item ID: %d, Total Sales Amount: %d\n", items_sales_amount[i].item_id,
                    items_sales_amount[i].total_sales_amount);
@@ -721,14 +737,16 @@ void year_analyze(item *item_data, purchase_list *purchase_data, int num_purchas
     item_sales_amount items_sales_amount[MAX_ITEMS] = {0};
 
     // Iterate over purchases
-    for (int i = 0; i < num_purchases; i++) {
+    int i;
+    for (i = 0; i < num_purchases; i++) {
         int purchase_month = purchase_data[i].month;
         int purchase_year = purchase_data[i].year;
 
         // Check if the purchase is within the current year
         if (current_year == purchase_year) {
             // Iterate over items in the purchase
-            for (int j = 0; j < MAX_ITEMS && purchase_data[i].id_list[j][0] != 0; j++) {
+            int j;
+            for (j = 0; j < MAX_ITEMS && purchase_data[i].id_list[j][0] != 0; j++) {
                 int item_id = purchase_data[i].id_list[j][0];
                 int quantity = purchase_data[i].id_list[j][1];
 
@@ -750,7 +768,7 @@ void year_analyze(item *item_data, purchase_list *purchase_data, int num_purchas
     // Print the total quantity sold for each item
     printf("Recent Sales for Each Item (판매량 내림차순):\n");
     printf("===========================================\n");
-    for (int i = 0; i < MAX_ITEMS; i++) {
+    for (i = 0; i < MAX_ITEMS; i++) {
         if (items_sold[i].item_id != 0) {
             printf("Item ID: %d, Total Quantity Sold: %d\n", items_sold[i].item_id, items_sold[i].total_quantity_sold);
         }
@@ -762,7 +780,7 @@ void year_analyze(item *item_data, purchase_list *purchase_data, int num_purchas
     // Print the total sales amount for each item
     printf("Recent Sales for Each Item (판매 금액 내림차순):\n");
     printf("===========================================\n");
-    for (int i = 0; i < MAX_ITEMS; i++) {
+    for (i = 0; i < MAX_ITEMS; i++) {
         if (items_sales_amount[i].item_id != 0) {
             printf("Item ID: %d, Total Sales Amount: %d\n", items_sales_amount[i].item_id,
                    items_sales_amount[i].total_sales_amount);
@@ -779,7 +797,8 @@ void time_analyze(purchase_list *purchase_data, int num_purchases) {
     int purchases_per_hour[24] = {0};
 
     // Iterate over purchases
-    for (int i = 0; i < num_purchases; i++) {
+    int i;
+    for (i = 0; i < num_purchases; i++) {
         int purchase_hour = purchase_data[i].hour;
 
         // Increment the count for the corresponding hour
@@ -787,8 +806,9 @@ void time_analyze(purchase_list *purchase_data, int num_purchases) {
     }
 
     // Sort the hours based on the number of purchases in descending order
-    for (int i = 0; i < 24; i++) {
-        for (int j = i + 1; j < 24; j++) {
+    for (i = 0; i < 24; i++) {
+        int j;
+        for (j = i + 1; j < 24; j++) {
             if (purchases_per_hour[i] < purchases_per_hour[j]) {
                 // Swap values if needed
                 int temp_count = purchases_per_hour[i];
@@ -801,7 +821,7 @@ void time_analyze(purchase_list *purchase_data, int num_purchases) {
     // Print the results
     printf("Busiest Hours of the Day (내림차순):\n");
     printf("===========================================\n");
-    for (int i = 0; i < 24; i++) {
+    for (i = 0; i < 24; i++) {
         printf("Hour: %02d:00 - %02d:59, Number of Purchases: %d\n", i, i, purchases_per_hour[i]);
     }
     printf("===========================================\n");
@@ -857,7 +877,8 @@ void discount_menu(item *itemdata, int rows) {
     system("clear");
     printf("현재 할인 / 행사 중인 물품 목록\n");
     printf("-------------------------------------\n");
-    for (int i = 0; i < rows; i++) {
+    int i;
+    for (i = 0; i < rows; i++) {
         if (itemdata[i].event_mode != 0 || itemdata[i].dc_percent != 0) {
             printf("%s / id: %d / 정가: %d / 할인율: %d / 이벤트모드 : %d\n", itemdata[i].item_name, itemdata[i].item_id, itemdata[i].price, itemdata[i].dc_percent, itemdata[i].event_mode);
         }
@@ -868,7 +889,7 @@ void discount_menu(item *itemdata, int rows) {
         if (new_itemid == -1) {
             break;
         }
-        for (int i = 0; i < rows; i++) {
+        for (i = 0; i < rows; i++) {
             if (itemdata[i].item_id == new_itemid) {
                 idx = i;
                 break;
@@ -940,10 +961,12 @@ void customer(int item_fd, int saved_item_fd, int purchase_list_fd){
     FILE *saved_item_fp = fdopen(saved_item_fd, "a+");
     FILE *purchase_list_fp = fdopen(purchase_list_fd, "a+");
     purchase_list purchase_list;
-    for (int i = 0; i < 10; i++) {
+    int i;
+    for (i = 0; i < 10; i++) {
         purchase_list.id_list[i][0] = -1;
         purchase_list.id_list[i][1] = -1;
     }
+    system("clear");
     
     write(STDOUT_FILENO, "고객 모드입니다.\n", 25);
 
@@ -961,19 +984,19 @@ void customer(int item_fd, int saved_item_fd, int purchase_list_fd){
     int numRows = 10;
     int numCols = 8;
     itemDB_name_list = (char**)malloc(numRows * sizeof(char*));
-    for (int i = 0; i < numRows; i++) {
+    for (i = 0; i < numRows; i++) {
         itemDB_name_list[i] = (char*)malloc(10 * sizeof(char));
     }
     itemDB = (int**)malloc(numRows * sizeof(int*));
-    for (int i = 0; i < numRows; i++) {
+    for (i = 0; i < numRows; i++) {
         itemDB[i] = (int*)malloc(numCols * sizeof(int));
     }
-    for (int i = 0; i < numRows; i++) {
+    for (i = 0; i < numRows; i++) {
         fscanf(item_fp, "%s %d %d %d %d %d %d %d", itemDB_name_list[i], &itemDB[i][1], &itemDB[i][2], &itemDB[i][3], &itemDB[i][4], &itemDB[i][5], &itemDB[i][6], &itemDB[i][7]);
     }
 
     item item_list[10];
-    for (int i = 0; i < 10; i++) {
+    for (i = 0; i < 10; i++) {
         strcpy(item_list[i].item_name, itemDB_name_list[i]);
         item_list[i].item_id = itemDB[i][1];
         item_list[i].item_count = itemDB[i][2];
@@ -991,24 +1014,29 @@ void customer(int item_fd, int saved_item_fd, int purchase_list_fd){
     choice = atoi(cmd_buf);
     switch (choice) {
         case 1:
+            system("clear");
             buy_item(item_list, &purchase_list);
             update_item_DB(item_list);
             longjmp(env, 1);
             break;
         case 2:
+            system("clear");
             refund_item(item_list, purchase_list_fp);
             update_item_DB(item_list);
             longjmp(env, 1);
             break;
         case 3:
+            system("clear");
             search_item();
             longjmp(env, 1);
             break;
         case 4:
+            system("clear");
             check_purchase_list(purchase_list_fp);
             longjmp(env, 1);
             break;
         case 5:
+            system("clear");
             open_refrigerator(saved_item_fp);
             longjmp(env, 1);
             break;
@@ -1016,7 +1044,7 @@ void customer(int item_fd, int saved_item_fd, int purchase_list_fd){
             write(STDOUT_FILENO, "프로그램을 종료합니다.\n", 34);
             if (purchase_list.id_list[0][0] != -1){
                 fprintf(purchase_list_fp, "%d %d %d %d %d %d\n", purchase_list.year, purchase_list.month, purchase_list.hour, purchase_list.hour, purchase_list.min, purchase_list.purchase_num);
-                for (int i = 0; i < 10; i++) {
+                for (i = 0; i < 10; i++) {
                     if(purchase_list.id_list[i][0] != -1){
                         fprintf(purchase_list_fp, "%d %d\n", purchase_list.id_list[i][0], purchase_list.id_list[i][1]);
                     }
@@ -1051,8 +1079,8 @@ void buy_item(item * item_list, purchase_list *purchase_list) {
     int temp_item_id = item_id;
 
     int wanted_item_index;
-
-    for (int i = 0; i < 10; i++) {
+    int i;
+    for (i = 0; i < 10; i++) {
         if (item_id == item_list[i].item_id) {
             wanted_item_index = i -1;
             break;
@@ -1113,7 +1141,7 @@ void buy_item(item * item_list, purchase_list *purchase_list) {
             purchase_list->hour = tm.tm_hour;
             purchase_list->min = tm.tm_min;
             purchase_list->purchase_num = rand() % 90000 + 10000;
-            for(int i = 0; i < 10; i++){
+            for(i = 0; i < 10; i++){
                 if (purchase_list->id_list[i][0] == -1){
                     purchase_list->id_list[i][0] = item_list[wanted_item_index].item_id;
                     purchase_list->id_list[i][1] = item_count;
@@ -1207,7 +1235,8 @@ void refund_item(item * item_list, FILE *purchase_list_fp) {
                     }
                     else{
                         int wanted_item_index;
-                        for (int i = 0; i < 10; i++) {
+                        int i;
+                        for (i = 0; i < 10; i++) {
                             if (item_list[i].item_id == want_item_id) {
                                 wanted_item_index = i;
                             }
@@ -1229,7 +1258,8 @@ void refund_item(item * item_list, FILE *purchase_list_fp) {
 }
 void update_item_DB(item *item_list){
     FILE *item_fp = fopen("data/itemDB.txt", "w");
-    for (int i = 0; i < 10; i++) {
+    int i;
+    for (i = 0; i < 10; i++) {
         if(item_list[i].item_count != 0){
         fprintf(item_fp, "%s %d %d %d %d %d %d %d\n", item_list[i].item_name, item_list[i].item_id, item_list[i].item_count, item_list[i].price, item_list[i].dc_percent, item_list[i].event_mode, item_list[i].sale_count, item_list[i].margin_percent);
     }
@@ -1272,12 +1302,13 @@ user login( FILE *fp) {
     int numCols = 6;
 
     userDB = (int**)malloc(numRows * sizeof(int*));
-    for (int i = 0; i < numRows; i++) {
+    int i;
+    for (i = 0; i < numRows; i++) {
         userDB[i] = (int*)malloc(numCols * sizeof(int));
     }
 
 
-    for (int i = 0; i < numRows; i++) {
+    for (i = 0; i < numRows; i++) {
         fscanf(fp, "%d %d %d %d %d %d", &userDB[i][0], &userDB[i][1], &userDB[i][2], &userDB[i][3], &userDB[i][4], &userDB[i][5]);
     }
 
@@ -1305,7 +1336,7 @@ user login( FILE *fp) {
     }
     
 
-    for (int i = 0; i < numRows; i++) {
+    for (i = 0; i < numRows; i++) {
         if (user.user_id == userDB[i][1] ) {
             if (user.password == userDB[i][2]) {
                 user.grade = userDB[i][0];
@@ -1459,8 +1490,6 @@ void print_salary(user user) {
 
 
 
-
-
 int main(){
     FILE *user_fp = fopen("data/userDB.txt", "r");
 
@@ -1471,6 +1500,7 @@ int main(){
         write(STDOUT_FILENO, "read error\n", 12);
 
     choice = atoi(cmd_buf);
+    system("clear");
 
     if (choice == 1){
         user user1 = login(user_fp); 
@@ -1504,5 +1534,4 @@ int main(){
         int purchase_list_fd = open("data/purchase_list_DB.txt", O_RDWR);
         customer(item_fd, saved_item_fd, purchase_list_fd);
     }
-
 }
