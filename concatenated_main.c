@@ -213,7 +213,7 @@ int delUser(user **userdata, int rows) {
     getchar();
     return rows;
 }
-
+void check_request();
 void userdata_menu(user* userdata, int user_rows) {
     while (1) {
         int menu; // 메뉴 번호를 입력받아 저장하는 변수
@@ -224,6 +224,7 @@ void userdata_menu(user* userdata, int user_rows) {
         printf("2. 근무자 정보 수정\n");
         printf("3. 근무자 정보 추가\n");
         printf("4. 근무자 정보 삭제\n");
+        printf("5. 근무자 요청 사항 조회\n");
         printf("0. 이전 메뉴로 돌아가기\n");
         printf("원하는 기능을 선택하여 입력하세요: ");
         scanf("%d", &menu);
@@ -241,6 +242,9 @@ void userdata_menu(user* userdata, int user_rows) {
                 break;
             case 4:
                 user_rows = delUser(&userdata, user_rows);
+                break;
+            case 5:
+                check_request();
                 break;
         }
     }
@@ -792,28 +796,38 @@ void year_analyze(item *item_data, purchase_list *purchase_data, int num_purchas
     getchar();
 }
 
+typedef struct {
+    int hour;
+    int purchases;
+} HourData;
+
 void time_analyze(purchase_list *purchase_data, int num_purchases) {
     // Create an array to store the number of purchases for each hour
     int purchases_per_hour[24] = {0};
 
     // Iterate over purchases
-    int i;
-    for (i = 0; i < num_purchases; i++) {
+    for (int i = 0; i < num_purchases; i++) {
         int purchase_hour = purchase_data[i].hour;
 
         // Increment the count for the corresponding hour
         purchases_per_hour[purchase_hour]++;
     }
 
-    // Sort the hours based on the number of purchases in descending order
-    for (i = 0; i < 24; i++) {
-        int j;
-        for (j = i + 1; j < 24; j++) {
-            if (purchases_per_hour[i] < purchases_per_hour[j]) {
+    // Create an array of HourData to store both hour and purchases
+    HourData hours_data[24];
+    for (int i = 0; i < 24; i++) {
+        hours_data[i].hour = i;
+        hours_data[i].purchases = purchases_per_hour[i];
+    }
+
+    // Sort the hours_data based on the number of purchases in descending order
+    for (int i = 0; i < 24; i++) {
+        for (int j = i + 1; j < 24; j++) {
+            if (hours_data[i].purchases < hours_data[j].purchases) {
                 // Swap values if needed
-                int temp_count = purchases_per_hour[i];
-                purchases_per_hour[i] = purchases_per_hour[j];
-                purchases_per_hour[j] = temp_count;
+                HourData temp = hours_data[i];
+                hours_data[i] = hours_data[j];
+                hours_data[j] = temp;
             }
         }
     }
@@ -821,8 +835,9 @@ void time_analyze(purchase_list *purchase_data, int num_purchases) {
     // Print the results
     printf("Busiest Hours of the Day (내림차순):\n");
     printf("===========================================\n");
-    for (i = 0; i < 24; i++) {
-        printf("Hour: %02d:00 - %02d:59, Number of Purchases: %d\n", i, i, purchases_per_hour[i]);
+    for (int i = 0; i < 24; i++) {
+        printf("Hour: %02d:00 - %02d:59, Number of Purchases: %d\n", hours_data[i].hour, 
+               hours_data[i].hour, hours_data[i].purchases);
     }
     printf("===========================================\n");
     fflush(stdin);
@@ -907,6 +922,8 @@ void discount_menu(item *itemdata, int rows) {
     }
     update_item_DB2(itemdata, rows);
 }
+void part_timer(user user, int fd);
+
 
 void admin_menu(user* userdata, int user_rows, item* itemdata, int item_rows, purchase_list *purchase_data, int purchase_row) {
     time_t timer; // time_t type 변수
@@ -925,8 +942,10 @@ void admin_menu(user* userdata, int user_rows, item* itemdata, int item_rows, pu
         printf("2. 근무자 정보 / 근무 시간 확인 및 수정\n");
         printf("3. 점포 경영 지표 분석\n");
         printf("4. 할인 정책 수정\n");
+        printf("5. 아르바이트 모드 변경\n");
         printf("0. 경영 관리 시스템 나가기\n");
         printf("원하는 기능을 선택하여 입력하세요: ");
+        user user2;
         scanf("%d", &menu);
         switch (menu) {
             case 0:
@@ -943,6 +962,18 @@ void admin_menu(user* userdata, int user_rows, item* itemdata, int item_rows, pu
             case 4:
                 discount_menu(itemdata, item_rows);
                 break;
+            case 5:
+                
+                user2.cph = userdata[0].cph;
+                user2.end_time = userdata[0].end_time;
+                user2.start_time = userdata[0].start_time;
+                user2.grade = userdata[0].grade;
+                user2.user_id = userdata[0].user_id;
+                user2.password = userdata[0].password;
+                int item_fd = open("data/itemDB.txt", O_RDWR);
+                part_timer(user2, item_fd);
+                break;
+
         }
     }
 }
@@ -953,6 +984,18 @@ void update_item_DB(item *item_list);
 void search_item();
 void check_purchase_list(FILE *purchase_list_fp);
 void open_refrigerator(FILE *saved_item_fp);
+
+void check_request() {
+    FILE *fp = fopen("data/user_request.txt", "r");
+    char buf[BUFFSIZE];
+    while (fgets(buf, BUFFSIZE, fp) != NULL) {
+        printf("%s", buf);
+    }
+    fflush(stdin);
+    printf("요청 사항을 전부 출력했습니다.\n");
+    printf("아무 키나 누르면 이전 메뉴로 돌아갑니다…\n");
+    getchar();
+}
 
 
 void customer(int item_fd, int saved_item_fd, int purchase_list_fd){
@@ -1284,6 +1327,9 @@ void check_purchase_list(FILE *purchase_list_fp){
             memset(line, 0, sizeof(line)); // 버퍼 초기화
         }
     }
+    fflush(stdin);
+    printf("아무 키나 누르면 이전 메뉴로 돌아갑니다...\n");
+    getchar();
 
 }
 void open_refrigerator(FILE *saved_item_fp){
@@ -1291,6 +1337,9 @@ void open_refrigerator(FILE *saved_item_fp){
     while(fscanf(saved_item_fp, "%d %d", &item_id, &item_count) > 0){
         fprintf(stdout, "물건 ID : %d /물건 개수 : %d\n", item_id, item_count);
     }
+    fflush(stdin);
+    printf("아무 키나 누르면 이전 메뉴로 돌아갑니다...\n");
+    getchar();
 }
 jmp_buf env;
 
@@ -1366,15 +1415,15 @@ void print_salary(user user);
 
 void part_timer(user user, int item_fp) {
     jmp_buf env, env2;
-
+    if (setjmp(env2) != 0) {
+    }
+    system("clear");
     write(STDOUT_FILENO, "알바생 모드입니다.\n", 28);
 
     if (setjmp(env) != 0) {
         write(STDOUT_FILENO, "잘못된 입력입니다. 다시 시도해주세요.\n", 55);
     }
-    if (setjmp(env2) != 0) {
-    }
-
+    
     write(STDOUT_FILENO, "\n원하는 기능을 선택하세요\n", 38);
     write(STDOUT_FILENO, "1. 재고 확인\n2. 근무시간 조정 요청\n3. 예상 급여 명세서\n0. 종료\n", 85);
 
@@ -1401,8 +1450,7 @@ void part_timer(user user, int item_fp) {
             break;
         case 0:
             write(STDOUT_FILENO, "프로그램을 종료합니다.\n", 31);
-            exit(0);
-            break;
+            return;
         default:
             longjmp(env, 1);
     }
@@ -1416,6 +1464,10 @@ void check_stock(int fp) {
     while ((n = read(fp, buf, BUFFSIZE)) > 0) {
         write(STDOUT_FILENO, buf, n);
     }
+    fflush(stdin);
+    printf("아무 키나 누르면 이전 메뉴로 돌아갑니다...\n");
+    getchar();
+    
 }
 
 void change_work_time(user user) {
@@ -1446,7 +1498,7 @@ void change_work_time(user user) {
         longjmp(env, 1);
     }
 
-    int fd = open("user_request.txt",  O_CREAT | O_RDWR , 0644);
+    int fd = open("data/user_request.txt",  O_CREAT | O_RDWR , 0644);
 
     if (fd < 0) {
         write(STDOUT_FILENO, "open error\n", 12);
@@ -1461,9 +1513,12 @@ void change_work_time(user user) {
             user.user_id, wanted_start_time, wanted_end_time,tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday
             );
     
-    write(fd, message, 120);
+    write(fd, message, 111);
 
     write(STDOUT_FILENO, "근무시간 조정 요청이 완료되었습니다.\n", 54);
+    fflush(stdin);
+    printf("아무 키나 누르면 이전 메뉴로 돌아갑니다...\n");
+    getchar();
 }
 
 void print_salary(user user) {
@@ -1486,6 +1541,10 @@ void print_salary(user user) {
     write(STDOUT_FILENO, "예상 급여 명세서입니다.\n", 35);
     sprintf(buf, "예상 급여: %d\n", expected_salary);
     write(STDOUT_FILENO, buf, 19);
+
+    fflush(stdin);
+    printf("아무 키나 누르면 이전 메뉴로 돌아갑니다...\n");
+    getchar();
 }
 
 
